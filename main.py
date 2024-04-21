@@ -1,13 +1,12 @@
 import sys
 
-from UI.StartScreen import *
+from PyQt5.QtWidgets import QApplication
+from Presenters import *
 
 
 def window():
-    app = QtWidgets.QApplication(sys.argv)
-    w = QtWidgets.QWidget()
-    ex = UiStartScreen()
-    ex.setupUi(w)
+    app = QApplication(sys.argv)
+    w = StartScreen()
     w.show()
     sys.exit(app.exec_())
 

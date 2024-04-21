@@ -35,21 +35,17 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <property name="spacing">
-      <number>6</number>
+      <number>1</number>
      </property>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QLabel" name="keyWordLabel">
-         <property name="text">
-          <string>Ключевое слово:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <widget class="QLabel" name="keyWordLabel">
+       <property name="text">
+        <string>Ключевое слово:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QLineEdit" name="keyWordInput"/>
@@ -87,6 +83,9 @@
         <widget class="QRadioButton" name="radioButtonMediumDifficulty">
          <property name="text">
           <string>Средний</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
