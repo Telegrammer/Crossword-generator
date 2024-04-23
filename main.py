@@ -1,13 +1,13 @@
 import sys
 
 from PyQt5.QtWidgets import QApplication
+
 from Presenters import *
 
 
 def window():
     app = QApplication(sys.argv)
-    w = StartScreen()
-    w.show()
+    w = CrosswordPresenter()
     sys.exit(app.exec_())
 
 
