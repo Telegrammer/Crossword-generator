@@ -1,5 +1,5 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QPen, QFont
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QPen, QFont, QImage
 from PyQt5.QtWidgets import QWidget, QDialog, QFileDialog, QMainWindow
 
 from Models import *
@@ -11,20 +11,21 @@ class MainWindow(QMainWindow, PythonClasses.MainWindowView):
     def __init__(self, signals: dict[str, AbstractEmitter]):
         QMainWindow.__init__(self)
         self.setupUi(self)
+        self.__crossword = []
+        self.__crossword_visible = True
+
         self.outer_signals = signals
         self.dialog_canceled = VoidEmitter()
+        self.need_redraw_crossword = TupleEmitter()
         self.generate_action.triggered.connect(self.open_regenerate_input)
         self.load_action.triggered.connect(self.open_reload_input)
 
         self.hide_descriptions_action.changed.connect(self.change_descriptions_view)
+        self.hide_words_action.changed.connect(self.change_crossword_view)
+        self.roll_action.changed.connect(self.roll_crossword)
 
-    def change_descriptions_view(self):
-        if self.hide_descriptions_action.isChecked():
-            self.descriptions_label.hide()
-            self.descriptions.hide()
-        else:
-            self.descriptions_label.show()
-            self.descriptions.show()
+    def set_crossword(self, crossword):
+        self.__crossword = crossword
 
     def open_regenerate_input(self):
         dialog_window = GenerateDialogWindow(self.dialog_canceled, self.outer_signals["generate"])
@@ -43,9 +44,29 @@ class MainWindow(QMainWindow, PythonClasses.MainWindowView):
         qp = QPainter()
         qp.begin(self)
         self.draw_background_lines(qp)
+        self.draw_crossword(qp)
         qp.end()
 
-    def print_descriptions(self, descriptions: list[str]):
+    def change_descriptions_view(self):
+        if self.hide_descriptions_action.isChecked():
+            self.descriptions_label.hide()
+            self.descriptions.hide()
+        else:
+            self.descriptions_label.show()
+            self.descriptions.show()
+
+    def change_crossword_view(self):
+        self.__crossword_visible = not self.__crossword_visible
+        self.update()
+
+    def roll_crossword(self):
+        pass
+
+    def print_descriptions(self):
+        if not self.__crossword:
+            return
+
+        descriptions = [word["description"] for word in self.__crossword]
         self.descriptions.clear()
         font: QFont = self.descriptions.font()
         print(font.pixelSize())
@@ -66,7 +87,7 @@ class MainWindow(QMainWindow, PythonClasses.MainWindowView):
             font.setPixelSize(font.pixelSize() - 1)
         self.descriptions.setFont(font)
 
-    def draw_background_lines(self, qp):
+    def draw_background_lines(self, qp: QPainter):
 
         pen = QPen(Qt.gray, 1, Qt.SolidLine)
         qp.setPen(pen)
@@ -80,6 +101,33 @@ class MainWindow(QMainWindow, PythonClasses.MainWindowView):
         while current_line_pos_y < self.centralwidget.height():
             qp.drawLine(0, current_line_pos_y, self.centralwidget.width(), current_line_pos_y)
             current_line_pos_y += start_pos
+
+    def draw_crossword(self, qp: QPainter):
+        if not self.__crossword:
+            return
+        pen = QPen(Qt.black, 2, Qt.SolidLine)
+        font = QFont("Calibri", 12, QFont.Bold)
+        qp.setPen(pen)
+        qp.setFont(font)
+        icon = QImage("UI/media/FrameIcon.png")
+        center = QPoint(self.centralwidget.width() // 2, self.centralwidget.height() // 2)
+        for i in range(0, len(self.__crossword) // 2):
+            center -= QPoint(0, icon.height())
+        for i in range(0, len(self.__crossword)):
+            for j in range(0, self.__crossword[i]["match position"]):
+                center -= QPoint(icon.width(), 0)
+            for j in range(0, len(self.__crossword[i]["word"])):
+                qp.drawImage(center, icon)
+                if self.__crossword_visible or j == self.__crossword[i]["match position"]:
+                    qp.drawText(QPoint(center.x() + icon.width() // 2, center.y() + icon.height() // 2),
+                                self.__crossword[i]["word"][j].upper())
+                if j == self.__crossword[i]["match position"]:
+                    qp.drawText(QPoint(center.x() + icon.width() // 4, int(center.y() + icon.height() // 1.5)),
+                                str(i + 1))
+                center += QPoint(icon.width(), 0)
+            for j in range(0, len(self.__crossword[i]["word"]) - self.__crossword[i]["match position"]):
+                center -= QPoint(icon.width(), 0)
+            center += QPoint(0, icon.height())
 
 
 class StartScreen(QWidget, PythonClasses.StartScreenView):
@@ -179,25 +227,26 @@ class CrosswordPresenter:
         self.dialog_signals["load"].signal.connect(self.start_load)
         self.error_signals["file not found"].signal.connect(self.display_nonexisting_file_error)
         self.error_signals["wrong extension"].signal.connect(self.display_wrong_extension_error)
+        self.error_signals["corrupted file"].signal.connect(self.display_corrupted_file_error)
 
         self.__main_window = MainWindow(self.dialog_signals)
         self.__start_screen = StartScreen(self.dialog_signals)
         self.__main_window.hide()
         self.__start_screen.show()
-        self.__crossword = []
 
     def start_generate(self, data: tuple[str]):
+        self.__main_window.set_crossword([])
         self.__main_window.descriptions.clear()
         for i in range(len(data)):
             self.__main_window.descriptions.addItem(f"{i + 1}. {data[i]};")
-        self.__crossword = CrosswordGenerator(data).generate()
         self.show()
 
     def start_load(self, path: str):
-        self.__crossword = load_crossword(find_sub_dict(self.error_signals,
-                                                        ("file not found", "wrong extension", "corrupted file")),
-                                          path)
-        print(self.__crossword)
+        self.__main_window.set_crossword([])
+        self.__main_window.set_crossword(load_crossword(find_sub_dict(self.error_signals,
+                                                                      ("file not found", "wrong extension",
+                                                                       "corrupted file")),
+                                                        path))
         self.show()
         pass
 
@@ -215,8 +264,18 @@ class CrosswordPresenter:
         error_window.show()
         error_window.exec_()
 
-    def show(self):
-        self.__main_window.print_descriptions([crossword_part["description"] for crossword_part in self.__crossword])
+    def display_corrupted_file_error(self, data: tuple):
+        error_window = QDialog()
+        error_window.setModal(True)
+        if not data:
+            error_window.setWindowTitle("Неправильно определены заголовки")
+        else:
+            error_window.setWindowTitle("Несовместимы слова")
+        error_window.show()
+        error_window.exec_()
 
+
+    def show(self):
+        self.__main_window.print_descriptions()
         self.__start_screen.close()
         self.__main_window.show()

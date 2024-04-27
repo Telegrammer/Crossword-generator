@@ -36,7 +36,10 @@ def load_crossword(error_signals: dict[str, AbstractEmitter], path: str):
             for row in raw_crossword_data:
                 match i:
                     case 0:
-                        pass
+                        if not ((row[0] == "﻿word" and row[1] == "description" and row[2] == "match position" and len(
+                                list(row)) == 3)):
+                            error_signals["corrupted file"].signal.emit(tuple())
+                            return
                     case 1:
                         keyword = row[word].lower()
                         print(keyword)

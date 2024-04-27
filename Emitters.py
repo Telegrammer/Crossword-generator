@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtGui import QPainter
 
 
 class AbstractEmitter(QObject):
@@ -29,3 +30,10 @@ class VoidEmitter(AbstractEmitter):
 
     def __str__(self):
         return "Wrapper for signal that receive nothing"
+
+
+class QPainterEmitter(AbstractEmitter):
+    signal = pyqtSignal(QPainter)
+
+    def __str__(self):
+        return "Special wrapper for qpainter"
