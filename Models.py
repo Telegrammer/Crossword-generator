@@ -6,7 +6,9 @@ from Emitters import *
 
 class Crossword:
     def __init__(self, words_data: list[dict]):
-        self.__keyword_matches: list[dict] = []
+        self.words_data: list[dict] = words_data
+        self.is_visible = True
+        self.is_vertical = True
         pass
 
 
@@ -36,7 +38,7 @@ def load_crossword(error_signals: dict[str, AbstractEmitter], path: str):
             for row in raw_crossword_data:
                 match i:
                     case 0:
-                        if not ((row[0] == "﻿word" and row[1] == "description" and row[2] == "match position" and len(
+                        if not ((row == ["﻿word", "description", "match position"] and len(
                                 list(row)) == 3)):
                             error_signals["corrupted file"].signal.emit(tuple())
                             return
@@ -57,6 +59,18 @@ def load_crossword(error_signals: dict[str, AbstractEmitter], path: str):
     except FileNotFoundError:
         error_signals["file not found"].signal.emit(path)
         return
+
+
+def save_crossword_table(filepath: str, crossword: Crossword):
+    with open(filepath, mode="w", encoding="utf-8", newline="") as csvfile:
+        crossword_writer = csv.writer(csvfile, delimiter=',')
+        keyword = "".join([crossword.words_data[i]["word"][crossword.words_data[i]["match position"]] for i in
+                           range(0, len(crossword.words_data))])
+        crossword_writer.writerow(("﻿word", "description", "match position"))
+        crossword_writer.writerow((keyword, "NULL", "NULL"))
+        for i in range(0, len(crossword.words_data)):
+            crossword_writer.writerow((crossword.words_data[i]["word"], crossword.words_data[i]["description"],
+                                       str(crossword.words_data[i]["match position"] + 1)))
 
 
 def find_sub_dict(original_dict: dict, required_keys: tuple) -> dict:

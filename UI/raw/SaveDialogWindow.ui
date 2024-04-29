@@ -6,12 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>806</width>
-    <height>546</height>
+    <width>836</width>
+    <height>400</height>
    </rect>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>400</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Сохранить как..</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: rgb(255, 255, 255);</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -21,6 +30,31 @@
        <property name="spacing">
         <number>0</number>
        </property>
+       <item>
+        <spacer name="verticalSpacer_6">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="font">
+          <font>
+           <pointsize>20</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Сохранить как..</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <spacer name="verticalSpacer_4">
          <property name="orientation">
@@ -43,7 +77,7 @@
           </size>
          </property>
          <property name="text">
-          <string>TextLabel</string>
+          <string>Имя файла:</string>
          </property>
         </widget>
        </item>
@@ -59,7 +93,7 @@
           </size>
          </property>
          <property name="text">
-          <string>TextLabel</string>
+          <string>Путь к файлу:</string>
          </property>
         </widget>
        </item>
@@ -72,12 +106,21 @@
           <enum>QLayout::SetDefaultConstraint</enum>
          </property>
          <item>
-          <widget class="QLineEdit" name="lineEdit"/>
+          <widget class="QLineEdit" name="pathInput"/>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton">
-           <property name="text">
-            <string>PushButton</string>
+          <widget class="QDialogButtonBox" name="browseButtonBox">
+           <property name="maximumSize">
+            <size>
+             <width>75</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(201, 201, 201);</string>
+           </property>
+           <property name="standardButtons">
+            <set>QDialogButtonBox::Open</set>
            </property>
           </widget>
          </item>
@@ -102,19 +145,25 @@
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>TextLabel</string>
+          <string>Сохранить в формате:</string>
          </property>
         </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
-          <widget class="QRadioButton" name="radioButton_2">
+          <widget class="QRadioButton" name="saveAsPhotoRadioButton">
            <property name="layoutDirection">
             <enum>Qt::RightToLeft</enum>
            </property>
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(201, 201, 201);</string>
+           </property>
            <property name="text">
-            <string>RadioButton</string>
+            <string>Фото</string>
+           </property>
+           <property name="checked">
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -136,12 +185,15 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
-          <widget class="QRadioButton" name="radioButton">
+          <widget class="QRadioButton" name="saveAsTableRadioButton">
            <property name="layoutDirection">
             <enum>Qt::RightToLeft</enum>
            </property>
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(201, 201, 201);</string>
+           </property>
            <property name="text">
-            <string>RadioButton</string>
+            <string>CSV таблица</string>
            </property>
           </widget>
          </item>
@@ -181,12 +233,15 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QLabel" name="crossword_image_label">
+        <widget class="QLabel" name="crosswordImageLabel">
          <property name="minimumSize">
           <size>
            <width>450</width>
            <height>300</height>
           </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(201, 201, 201);</string>
          </property>
          <property name="text">
           <string/>
@@ -212,10 +267,29 @@
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(201, 201, 201);</string>
+     </property>
      <property name="standardButtons">
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
     </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer_5">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::MinimumExpanding</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>

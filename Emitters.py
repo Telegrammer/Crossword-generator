@@ -30,10 +30,3 @@ class VoidEmitter(AbstractEmitter):
 
     def __str__(self):
         return "Wrapper for signal that receive nothing"
-
-
-class QPainterEmitter(AbstractEmitter):
-    signal = pyqtSignal(QPainter)
-
-    def __str__(self):
-        return "Special wrapper for qpainter"
