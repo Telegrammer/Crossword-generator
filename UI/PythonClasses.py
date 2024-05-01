@@ -73,7 +73,7 @@ class GenerateDialogWindowView(object):
         self.difficultyLabel.setText(_translate("GenerateDialogWindow", "Сложность кроссворда:"))
         self.radioButtonEasyDifficulty.setText(_translate("GenerateDialogWindow", "Легкий"))
         self.radioButtonMediumDifficulty.setText(_translate("GenerateDialogWindow", "Средний"))
-        self.radioButtonHardDifficulty.setText(_translate("GenerateDialogWindow", "Сложный"))
+        self.radioButtonHardDifficulty.setText(_translate("GenerateDialogWindow", "Тяжелый"))
 
 
 class LoadDialogWindowView(object):
@@ -248,7 +248,7 @@ class MainWindowView(object):
         self.descriptions_label.setObjectName("descriptions_label")
         self.verticalLayout.addWidget(self.descriptions_label)
         self.descriptions = QtWidgets.QListWidget(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.descriptions.sizePolicy().hasHeightForWidth())

@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPen, QFont, QImage, QPixmap
-from PyQt5.QtWidgets import QWidget, QDialog, QFileDialog, QMainWindow
+from PyQt5.QtWidgets import QWidget, QDialog, QFileDialog, QMainWindow, QMessageBox
 
 from Models import *
 from UI import PythonClasses
@@ -90,26 +90,31 @@ class MainWindow(QMainWindow, PythonClasses.MainWindowView):
         descriptions = [word["description"] for word in self.__crossword.words_data]
         self.descriptions.clear()
         font: QFont = self.descriptions.font()
-        print(font.pixelSize())
+        font.setPixelSize(19)
+        self.print_lines(font, descriptions)
+        self.descriptions.setFont(font)
+        print(self.descriptions.count())
+
+    def print_lines(self, font: QFont, descriptions: list[str]):
+        letter_width = font.pixelSize()
         for i in range(0, len(descriptions)):
-            description_words: list[str] = descriptions[i].split()
-            letter_width = self.descriptions.fontMetrics().averageCharWidth() + 1
+            description_words: list[str] = descriptions[i].capitalize().split()
             line = f"{i + 1}. "
             while len(description_words) != 0:
                 current_word = description_words.pop(0)
-                if len(line + current_word) * letter_width <= self.descriptions.width():
+                if len(line + current_word) * (letter_width - 7) <= self.descriptions.width():
                     line += current_word
                     line += " "
                 else:
                     self.descriptions.addItem(line)
                     line = "    " + current_word + " "
             self.descriptions.addItem(line)
-        while self.descriptions.count() * (font.pixelSize() + 6) > self.descriptions.height():
-            font.setPixelSize(font.pixelSize() - 1)
-        self.descriptions.setFont(font)
+        if self.descriptions.count() * (letter_width + 4) > self.descriptions.height():
+            font.setPixelSize(letter_width - 1)
+            self.descriptions.clear()
+            self.print_lines(font, descriptions)
 
     def draw_background_lines(self, qp: QPainter):
-
         pen = QPen(Qt.gray, 1, Qt.SolidLine)
         qp.setPen(pen)
 
@@ -253,7 +258,10 @@ class SafeDialogWindow(QDialog, PythonClasses.SaveDialogWindowView):
         self.browseButton.clicked.connect(self.browse)
 
     def send_data_for_save(self):
-        self.__accepted.signal.emit((self.fileNameInput.text(), self.pathInput.text(), self.__file_format))
+        filename = self.fileNameInput.text()
+        if not filename:
+            filename = "untitiled"
+        self.__accepted.signal.emit((filename, self.pathInput.text(), self.__file_format))
         self.close()
 
     def return_start_screen(self):
@@ -265,6 +273,7 @@ class SafeDialogWindow(QDialog, PythonClasses.SaveDialogWindowView):
         if self.__browseWindow is None:
             self.__browseWindow = QFileDialog()
             self.__browseWindow.setModal(True)
+            self.__browseWindow.setFileMode(QFileDialog.Directory)
             self.__browseWindow.show()
         if self.__browseWindow.exec_():
             self.pathInput.setText(self.__browseWindow.selectedFiles()[0])
@@ -277,13 +286,21 @@ class SafeDialogWindow(QDialog, PythonClasses.SaveDialogWindowView):
 
 class CrosswordPresenter:
     def __init__(self):
+        self.__difficulty_identifier = {
+            "Легкий": 1,
+            "Средний": 2,
+            "Тяжелый": 3
+        }
         self.dialog_signals = {"generate": TupleEmitter(),
                                "load": StringEmitter(),
                                "save": TupleEmitter()}
         self.error_signals = {"incorrect word": StringEmitter(),
                               "file not found": StringEmitter(),
                               "wrong extension": StringEmitter(),
-                              "corrupted file": TupleEmitter()}
+                              "corrupted file": TupleEmitter(),
+                              "directory not found": StringEmitter(),
+                              "keyword not found": StringEmitter(),
+                              "words are over": StringEmitter()}
 
         self.dialog_signals["generate"].signal.connect(self.start_generate)
         self.dialog_signals["load"].signal.connect(self.start_load)
@@ -291,6 +308,9 @@ class CrosswordPresenter:
         self.error_signals["file not found"].signal.connect(self.display_nonexisting_file_error)
         self.error_signals["wrong extension"].signal.connect(self.display_wrong_extension_error)
         self.error_signals["corrupted file"].signal.connect(self.display_corrupted_file_error)
+        self.error_signals["directory not found"].signal.connect(self.display_nonexisting_dir_error)
+        self.error_signals["keyword not found"].signal.connect(self.display_unexcepted_keyword_error)
+        self.error_signals["words are over"].signal.connect(self.display_empty_matches)
 
         self.__main_window = MainWindow(self.dialog_signals)
         self.__start_screen = StartScreen(self.dialog_signals)
@@ -298,14 +318,16 @@ class CrosswordPresenter:
         self.__start_screen.show()
 
     def start_generate(self, data: tuple[str]):
-        self.__main_window.set_crossword(None)
+        self.__main_window.set_crossword(Crossword([]))
         self.__main_window.descriptions.clear()
-        for i in range(len(data)):
-            self.__main_window.descriptions.addItem(f"{i + 1}. {data[i]};")
+        crossword = generate_crossword(find_sub_dict(self.error_signals, ("keyword not found", "words are over")),
+                                       data[0],
+                                       self.__difficulty_identifier[data[1]])
+        self.__main_window.set_crossword(crossword)
         self.show()
 
     def start_load(self, path: str):
-        self.__main_window.set_crossword()
+        self.__main_window.set_crossword(Crossword([]))
         crossword = Crossword(load_crossword(find_sub_dict(self.error_signals,
                                                            ("file not found", "wrong extension",
                                                             "corrupted file")),
@@ -319,31 +341,60 @@ class CrosswordPresenter:
             window_screenshot = self.__main_window.take_screenshot()
             window_screenshot.save(data[0] + ".png")
         else:
-            save_crossword_table(data[1] + data[0] + ".csv", self.__main_window.get_crossword())
+            save_crossword_table(find_sub_dict(self.error_signals, ["directory not found"]),
+                                 f"{data[1]}/{data[0]}.csv", self.__main_window.get_crossword())
+
+    @staticmethod
+    def display_error(error_window: QMessageBox):
+        error_window.setWindowTitle("Ошибка!")
+        error_window.setModal(True)
+        error_window.show()
+        error_window.exec_()
 
     def display_nonexisting_file_error(self, incorrect_path: str):
-        error_window = QDialog()
-        error_window.setWindowTitle(incorrect_path)
-        error_window.setModal(True)
-        error_window.show()
-        error_window.exec_()
+        error_window = QMessageBox()
+        if not incorrect_path:
+            empty_str = "пустым"
+        else:
+            incorrect_path = " " + incorrect_path
+            empty_str = ""
+        error_window.setText(f"Не существует файла с {empty_str} путем {incorrect_path}")
+        self.display_error(error_window)
 
     def display_wrong_extension_error(self, incorrect_extension: str):
-        error_window = QDialog()
-        error_window.setWindowTitle(incorrect_extension + " != .csv")
-        error_window.setModal(True)
-        error_window.show()
-        error_window.exec_()
+        error_window = QMessageBox()
+        error_window.setText(f"Выбранный файл должен быть формата .csv, а не {incorrect_extension}")
+        self.display_error(error_window)
 
     def display_corrupted_file_error(self, data: tuple):
-        error_window = QDialog()
-        error_window.setModal(True)
+        error_window = QMessageBox()
         if not data:
-            error_window.setWindowTitle("Неправильно определены заголовки")
+            error_window.setText("Неправильно определены заголовки")
         else:
-            error_window.setWindowTitle("Несовместимы слова")
-        error_window.show()
-        error_window.exec_()
+            error_window.setText(
+                f"Буква с индексом {data[2]} слова {data[1]} не совпадает"
+                f" с буквой ключевого слова {data[0]} с индексом {data[3]}")
+        self.display_error(error_window)
+
+    def display_nonexisting_dir_error(self, incorrect_path: str):
+        error_window = QMessageBox()
+        if not incorrect_path:
+            empty_str = "пустым"
+        else:
+            incorrect_path = " " + incorrect_path
+            empty_str = ""
+        error_window.setText(f"Не существует директории с {empty_str} путем {incorrect_path}")
+        self.display_error(error_window)
+
+    def display_unexcepted_keyword_error(self, wrong_keyword: str):
+        error_window = QMessageBox()
+        error_window.setText(f"Ключевое слово {wrong_keyword} не найдено.")
+        self.display_error(error_window)
+
+    def display_empty_matches(self, key_char: str):
+        error_window = QMessageBox()
+        error_window.setText(f"Слов с буквой {key_char} не хватает для создания кроссворда.")
+        self.display_error(error_window)
 
     def show(self):
         self.__main_window.print_descriptions()
