@@ -71,7 +71,7 @@ def load_crossword(error_signals: dict[str, AbstractEmitter], path: str):
             filename, file_extension = os.path.splitext(path)
             if file_extension != ".csv":
                 error_signals["wrong extension"].signal.emit(file_extension)
-                return Crossword([])
+                return []
             raw_crossword_data = csv.reader(crossword_file, delimiter=';', quotechar=' ')
             i = 0
             word = 0
@@ -84,7 +84,7 @@ def load_crossword(error_signals: dict[str, AbstractEmitter], path: str):
                         if not ((row == ["﻿word", "description", "match position"] and len(
                                 list(row)) == 3)):
                             error_signals["corrupted file"].signal.emit(tuple())
-                            return Crossword([])
+                            return []
                     case 1:
                         keyword = row[word].lower()
                         print(keyword)

@@ -93,7 +93,6 @@ class MainWindow(QMainWindow, PythonClasses.MainWindowView):
         font.setPixelSize(19)
         self.print_lines(font, descriptions)
         self.descriptions.setFont(font)
-        print(self.descriptions.count())
 
     def print_lines(self, font: QFont, descriptions: list[str]):
         letter_width = font.pixelSize()
